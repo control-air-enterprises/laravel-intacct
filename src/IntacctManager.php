@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace ControlAir\LaravelIntacct;
 
 use ControlAir\Intacct\Auth\Contracts\TokenStore;
+use ControlAir\Intacct\Auth\OAuth\ClientCredentialsGrant;
 use ControlAir\Intacct\Auth\OAuth\OAuthClient;
-use ControlAir\Intacct\Auth\Tokens\ManagedAccessTokenProvider;
 use ControlAir\Intacct\Auth\Tokens\TokenKey;
 use ControlAir\Intacct\Auth\Tokens\TokenManager;
 use ControlAir\Intacct\Configuration\ApiConfiguration;
 use ControlAir\Intacct\Configuration\OAuthApplication;
 use ControlAir\Intacct\Exceptions\ConfigurationException;
 use ControlAir\Intacct\IntacctClient;
-use Illuminate\Contracts\Config\Repository;
+use ControlAir\LaravelIntacct\Auth\ClientCredentialsTokenProvider;
+use Illuminate\Config\Repository;
+use Illuminate\Contracts\Cache\LockProvider;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Psr\Clock\ClockInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -43,6 +46,7 @@ final class IntacctManager
         private readonly StreamFactoryInterface $streamFactory,
         private readonly ClockInterface $clock,
         private readonly TokenStore $tokenStore,
+        private readonly CacheRepository $cache,
     ) {
     }
 
@@ -52,7 +56,7 @@ final class IntacctManager
 
         if (! isset($this->clients[$name])) {
             $this->clients[$name] = new IntacctClient(
-                tokens: new ManagedAccessTokenProvider($this->tokenManager($name), $this->tokenKey($name)),
+                tokens: $this->tokenProvider($name),
                 httpClient: $this->httpClient,
                 requestFactory: $this->requestFactory,
                 streamFactory: $this->streamFactory,
@@ -72,6 +76,7 @@ final class IntacctManager
                 oauth: $this->oauthClient($name),
                 store: $this->tokenStore,
                 clock: $this->clock,
+                refreshLeewaySeconds: ClientCredentialsTokenProvider::REFRESH_LEEWAY_SECONDS,
             );
         }
 
@@ -119,6 +124,38 @@ final class IntacctManager
     public function getDefaultConnection(): string
     {
         return $this->config->string('intacct.default');
+    }
+
+    private function tokenProvider(string $name): ClientCredentialsTokenProvider
+    {
+        return new ClientCredentialsTokenProvider(
+            manager: $this->tokenManager($name),
+            store: $this->tokenStore,
+            clock: $this->clock,
+            locks: $this->lockProvider(),
+            key: $this->tokenKey($name),
+            grant: $this->grant($name),
+        );
+    }
+
+    private function grant(string $name): ClientCredentialsGrant
+    {
+        return ClientCredentialsGrant::forUsername(
+            userId: $this->requiredValue($name, 'user_id'),
+            companyId: $this->requiredValue($name, 'company_id'),
+            entityId: $this->optionalValue($name, 'entity_id'),
+        );
+    }
+
+    private function lockProvider(): LockProvider
+    {
+        $store = $this->cache->getStore();
+
+        if (! $store instanceof LockProvider) {
+            throw new ConfigurationException('The cache store must support atomic locks to refresh Intacct tokens.');
+        }
+
+        return $store;
     }
 
     private function resolveName(?string $name): string

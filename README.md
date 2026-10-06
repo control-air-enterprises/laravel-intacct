@@ -140,9 +140,19 @@ Intacct::connection()->projects->query(...);
 Intacct::connection('company-b')->projects->query(...);
 ```
 
-## Token storage
+## Tokens
 
-OAuth tokens are stored in the `intacct_tokens` table, one row per `token_key`. Access and refresh tokens are encrypted with the application's `APP_KEY`, so rotating `APP_KEY` invalidates the stored tokens.
+The package obtains and renews OAuth tokens on its own. Before each request:
+
+1. A stored token with more than 60 seconds left is used as is.
+2. Otherwise the package takes the cache lock `intacct:token-refresh:{token_key}`, so only one process renews the token at a time, and then:
+    - uses the token another process stored while this one was waiting, or
+    - refreshes it with the refresh token when Sage issued one, or
+    - requests a new token with the client credentials of the connection.
+
+The cache store must support atomic locks (`redis`, `database`, `file` or `array`). A process that waits more than 30 seconds for the lock fails with `Illuminate\Contracts\Cache\LockTimeoutException`.
+
+Tokens are stored in the `intacct_tokens` table, one row per `token_key`. Access and refresh tokens are encrypted with the application's `APP_KEY`, so rotating `APP_KEY` invalidates the stored tokens.
 
 ## Reference
 
@@ -155,7 +165,7 @@ Every method takes an optional connection name. Without one, it uses the default
 | `connection(?string $name = null)` | `IntacctClient` | The SDK client for the connection |
 | `application(?string $name = null)` | `OAuthApplication` | The OAuth client ID and secret |
 | `oauthClient(?string $name = null)` | `OAuthClient` | The SDK OAuth client, for token, revoke and introspection calls |
-| `tokenManager(?string $name = null)` | `TokenManager` | The SDK token manager bound to the database token store |
+| `tokenManager(?string $name = null)` | `TokenManager` | The SDK token manager bound to the database token store. It does not take the token lock |
 | `tokenKey(?string $name = null)` | `TokenKey` | The key the connection's tokens are stored under |
 | `getDefaultConnection()` | `string` | The name of the default connection |
 
@@ -198,8 +208,8 @@ The SDK objects in this table always belong to the default connection. Use `Inta
 
 | Exception | When |
 |---|---|
-| `ControlAir\Intacct\Exceptions\ConfigurationException` | The connection does not exist, `client_id` or `token_key` is missing, or the token store driver is not `database` |
-| `ControlAir\Intacct\Exceptions\MissingTokenException` | No tokens are stored for the connection, or the access token expired and there is no refresh token |
+| `ControlAir\Intacct\Exceptions\ConfigurationException` | The connection does not exist, `client_id`, `company_id`, `user_id` or `token_key` is missing, the token store driver is not `database`, or the cache store does not support locks |
+| `Illuminate\Contracts\Cache\LockTimeoutException` | Another process held the token lock for more than 30 seconds |
 
 ## Testing
 
