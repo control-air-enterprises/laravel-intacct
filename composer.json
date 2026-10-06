@@ -40,7 +40,10 @@
         "laravel": {
             "providers": [
                 "ControlAir\\LaravelIntacct\\IntacctServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Intacct": "ControlAir\\LaravelIntacct\\Facades\\Intacct"
+            }
         }
     },
     "scripts": {
