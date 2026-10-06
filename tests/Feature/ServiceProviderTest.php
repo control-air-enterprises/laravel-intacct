@@ -51,4 +51,17 @@ final class ServiceProviderTest extends TestCase
 
         File::delete($published);
     }
+
+    public function test_the_migrations_can_be_published(): void
+    {
+        $exitCode = Artisan::call('vendor:publish', ['--tag' => 'intacct-migrations']);
+
+        $this->assertSame(0, $exitCode);
+
+        $published = File::glob(database_path('migrations/*_create_intacct_tokens_table.php'));
+
+        $this->assertCount(1, $published);
+
+        File::delete($published);
+    }
 }
