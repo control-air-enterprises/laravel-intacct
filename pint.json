@@ -1,0 +1,43 @@
+{
+  "preset": "psr12",
+  "rules": {
+    "date_time_immutable": true,
+    "declare_strict_types": true,
+    "modernize_types_casting": true,
+    "mb_str_functions": true,
+    "lowercase_keywords": true,
+    "lowercase_static_reference": true,
+    "no_multiple_statements_per_line": true,
+    "visibility_required": true,
+    "strict_comparison": false,
+    "self_accessor": true,
+    "self_static_accessor": true,
+    "array_indentation": true,
+    "align_multiline_comment": true,
+    "ordered_imports": {
+      "sort_algorithm": "alpha",
+      "imports_order": [
+        "class",
+        "function",
+        "const"
+      ]
+    },
+    "blank_line_between_import_groups": true,
+    "no_extra_blank_lines": {
+      "tokens": [
+        "extra"
+      ]
+    },
+    "concat_space": {
+      "spacing": "one"
+    },
+    "blank_line_before_statement": {
+      "statements": [
+        "return"
+      ]
+    }
+  },
+  "notName": [
+    "preload.php"
+  ]
+}

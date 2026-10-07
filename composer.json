@@ -1,0 +1,62 @@
+{
+    "name": "control-air/laravel-intacct",
+    "description": "Laravel integration for the Sage Intacct PHP SDK.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "sage",
+        "intacct"
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/control-air-enterprises/intacct-php-sdk"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "control-air/intacct-php-sdk": "dev-main",
+        "guzzlehttp/guzzle": "^7.10",
+        "illuminate/support": "^13.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.12",
+        "laravel/pint": "^1.24",
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ControlAir\\LaravelIntacct\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ControlAir\\LaravelIntacct\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ControlAir\\LaravelIntacct\\IntacctServiceProvider"
+            ],
+            "aliases": {
+                "Intacct": "ControlAir\\LaravelIntacct\\Facades\\Intacct"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": [
+            "pint --test",
+            "phpstan analyse --memory-limit=1G --no-progress"
+        ],
+        "lint:fix": "pint"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
