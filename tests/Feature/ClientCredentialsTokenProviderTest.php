@@ -122,6 +122,65 @@ final class ClientCredentialsTokenProviderTest extends TestCase
         $this->assertStringContainsString('grant_type=refresh_token', $this->requestBody(0));
     }
 
+    public function test_it_authenticates_again_when_sage_rejects_the_refresh_token(): void
+    {
+        $this->storeTokens('expired-access', 'revoked-refresh', '-1 minute');
+        $this->responses->append(
+            new Response(400, ['Content-Type' => 'application/json'], (string) json_encode(['error' => 'invalid_grant'])),
+            $this->tokenResponse('new-access'),
+        );
+
+        $token = $this->provider()->getAccessToken();
+
+        $this->assertSame('new-access', $token->reveal());
+        $this->assertCount(2, $this->history);
+        $this->assertStringContainsString('grant_type=refresh_token', $this->requestBody(0));
+        $this->assertStringContainsString('client_credentials', $this->requestBody(1));
+        $this->assertSame('new-access', $this->storedTokens()?->accessToken->reveal());
+    }
+
+    public function test_invalidate_forgets_the_stored_token_when_it_is_the_rejected_one(): void
+    {
+        $this->storeTokens('revoked-access', null, '+1 hour');
+
+        $this->provider()->invalidate(new AccessToken('revoked-access'));
+
+        $this->assertNull($this->storedTokens());
+        $this->assertCount(0, $this->history);
+    }
+
+    public function test_invalidate_keeps_a_token_another_worker_already_replaced(): void
+    {
+        $this->storeTokens('newer-access', null, '+1 hour');
+
+        $this->provider()->invalidate(new AccessToken('revoked-access'));
+
+        $this->assertSame('newer-access', $this->storedTokens()?->accessToken->reveal());
+    }
+
+    public function test_it_authenticates_again_after_the_stored_token_is_invalidated(): void
+    {
+        $this->storeTokens('revoked-access', null, '+1 hour');
+        $this->responses->append($this->tokenResponse('new-access'));
+        $provider = $this->provider();
+
+        $provider->invalidate($provider->getAccessToken());
+        $token = $provider->getAccessToken();
+
+        $this->assertSame('new-access', $token->reveal());
+        $this->assertCount(1, $this->history);
+        $this->assertStringContainsString('client_credentials', $this->requestBody(0));
+    }
+
+    public function test_invalidate_releases_the_lock(): void
+    {
+        $this->storeTokens('revoked-access', null, '+1 hour');
+
+        $this->provider()->invalidate(new AccessToken('revoked-access'));
+
+        $this->assertTrue($this->cacheLocks()->lock('intacct:token-refresh:default', 30)->get());
+    }
+
     public function test_it_releases_the_lock_after_obtaining_a_token(): void
     {
         $this->responses->append($this->tokenResponse('new-access'));
