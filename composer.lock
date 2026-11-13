@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5445c18db911519a22467597ecea0b8c",
+    "content-hash": "358a0de9a90e3b5c4869434ee90370d5",
     "packages": [
         {
             "name": "brick/math",
@@ -146,12 +146,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/control-air-enterprises/intacct-php-sdk.git",
-                "reference": "bb821fe2799fdbe78a9364721cddd823628a9fe8"
+                "reference": "bcc2d9957c770f7cc9500632e41dacb8de82288d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/control-air-enterprises/intacct-php-sdk/zipball/bb821fe2799fdbe78a9364721cddd823628a9fe8",
-                "reference": "bb821fe2799fdbe78a9364721cddd823628a9fe8",
+                "url": "https://api.github.com/repos/control-air-enterprises/intacct-php-sdk/zipball/bcc2d9957c770f7cc9500632e41dacb8de82288d",
+                "reference": "bcc2d9957c770f7cc9500632e41dacb8de82288d",
                 "shasum": ""
             },
             "require": {
@@ -218,7 +218,7 @@
                 "source": "https://github.com/control-air-enterprises/intacct-php-sdk/tree/main",
                 "issues": "https://github.com/control-air-enterprises/intacct-php-sdk/issues"
             },
-            "time": "2026-10-06T04:58:02+00:00"
+            "time": "2026-11-12T19:27:31+00:00"
         },
         {
             "name": "dflydev/dot-access-data",
